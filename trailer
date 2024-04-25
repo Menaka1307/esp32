@@ -1,0 +1,94 @@
+#include <WiFi.h>
+
+const char* ssid = "Menaka";
+const char* password = "kmb@1307";
+const char* host = "192.168.0.106";
+const int port = 80;
+
+// Define sensor pins
+#define MQ135_PIN 36
+#define MQ2_PIN   39
+#define MQ4_PIN   34
+#define MQ8_PIN   35
+#define DUST_SENSOR_PIN 16
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  int mq135Value = analogRead(MQ135_PIN);
+  int mq2Value = analogRead(MQ2_PIN);
+  int mq4Value = analogRead(MQ4_PIN);
+  int mq8Value = analogRead(MQ8_PIN);
+  int dustValue = digitalRead(DUST_SENSOR_PIN);
+
+  // Convert sensor values to gas concentrations
+  float hydrogenPPM = map(mq8Value, 0, 4095, 0, 100); // Assuming linear mapping
+  float methanePPM = map(mq4Value, 0, 4095, 0, 100); // Assuming linear mapping
+  float smokePPM = map(mq2Value, 0, 4095, 0, 100);   // Assuming linear mapping
+
+  // AQI calculation based on local standards
+  float AQI = calculateAQI(mq135Value);
+
+  // CO concentration calculation based on local standards
+  float COPPM = calculateCO(mq2Value);
+
+  Serial.print("Hydrogen: ");
+  Serial.print(hydrogenPPM);
+  Serial.print(", Methane: ");
+  Serial.print(methanePPM);
+  Serial.print(", Smoke: ");
+  Serial.print(smokePPM);
+  Serial.print(", AQI: ");
+  Serial.print(AQI);
+  Serial.print(", CO: ");
+  Serial.println(COPPM);
+
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClient client;
+
+    if (client.connect(host, port)) {
+      client.print("Hydrogen: ");
+      client.print(hydrogenPPM);
+      client.print(", Methane: ");
+      client.print(methanePPM);
+      client.print(", Smoke: ");
+      client.print(smokePPM);
+      client.print(", AQI: ");
+      client.print(AQI);
+      client.print(", CO: ");
+      client.println(COPPM);
+
+      Serial.println("Data sent to server");
+    } else {
+      Serial.println("Connected to wifi");
+    }
+
+    client.stop();
+  }
+
+  delay(1000); // Adjust as needed
+}
+
+float calculateAQI(int sensorValue) {
+  // Implement AQI calculation based on local standards
+  // This is just a placeholder
+  float AQI = map(sensorValue, 0, 4095, 0, 500); // Assuming a linear mapping
+  return AQI;
+}
+
+float calculateCO(int sensorValue) {
+  // Implement CO concentration calculation based on local standards
+  // This is just a placeholder
+  float COPPM = map(sensorValue, 0, 4095, 0, 100); // Assuming a linear mapping
+  return COPPM;
+}
