@@ -1,0 +1,47 @@
+#define BLYNK_TEMPLATE_ID "TMPL3RjYdxzND"
+#define BLYNK_TEMPLATE_NAME "project"
+#define BLYNK_AUTH_TOKEN "ZNzL3Q0TTfmD1deaN9GNIxeVvamthIZV"
+#define BLYNK_PRINT Serial
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+
+char auth[] = "ZNzL3Q0TTfmD1deaN9GNIxeVvamthIZV";  // Replace with your Blynk auth token
+char ssid[] = "Menaka"; // Replace with your WiFi SSID
+char pass[] = "kmb@1307";    // Replace with your WiFi password
+const char* host = "192.168.0.106";
+
+int mq2Pin = 34; // Analog pin for MQ2
+int mq4Pin = 35; // Analog pin for MQ4
+int mq8Pin = 32; // Analog pin for MQ8
+int mq135Pin = 33; // Analog pin for MQ135
+
+void setup()
+{
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+}
+
+void loop()
+{
+  float mq2Value = analogRead(mq2Pin);
+  float mq4Value = analogRead(mq4Pin);
+  float mq8Value = analogRead(mq8Pin);
+  float mq135Value = analogRead(mq135Pin);
+
+  // Convert analog readings to actual gas concentrations in ppm
+  // Calibrate these values based on your sensor's characteristics
+  float coConcentration = map(mq2Value, 0, 1023, 0, 50); // Assuming CO sensor calibrated to ppm
+  float methaneConcentration = map(mq4Value, 0, 1023, 0, 100); // Assuming methane sensor calibrated to ppm
+  float hydrogenConcentration = map(mq8Value, 0, 1023, 0, 100); // Assuming hydrogen sensor calibrated to ppm
+  float aqiValue = map(mq135Value, 0, 1023, 0, 500); // Assuming AQI sensor calibrated to ppm
+
+  // Send sensor data to Blynk app
+  Blynk.virtualWrite(V2, coConcentration);
+  Blynk.virtualWrite(V4, methaneConcentration);
+  Blynk.virtualWrite(V3, hydrogenConcentration);
+  Blynk.virtualWrite(V1, aqiValue);
+
+  delay(1000); // Delay between sensor readings
+  Blynk.run();
+}
